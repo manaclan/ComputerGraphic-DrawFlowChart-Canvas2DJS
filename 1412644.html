@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<link rel="stylesheet" type="text/css" href="public/stylesheets/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="public/stylesheets/css/customcss.css">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title></title>
+</head>
+<body>
+<h1>DHMT Easy</h1>
+<div class = "container-fluid">
+	<div class="row">
+		<div class="col-8">
+			<canvas id="basicCanvas" width="600" height="400" onwheel="Scroll(event)" 
+			onmousedown="onmousedown_Canvas(event)" onmousemove="onmousemove_Canvas(event)" 
+			onmouseup="onmouseup_Canvas(event)"></canvas>
+		</div>
+		
+		<div class="col-4" >
+			
+			<div class="row">
+				<input id="statement"  type="image"  src="./resources/statement.bmp" onclick="onclick_Statement(event)">
+				<p>
+					Statement
+				</p>
+			</div>
+			<div class="row">
+				<input  id="if-else" type="image"  src="./resources/if-else.bmp" onclick="onclick_If_Else(event)">
+				<p>
+					If-else
+				</p>
+			</div>
+			<div class="row">
+					<input  id="if-else" type="image"  src="./resources/ConnectLine.bmp" onclick="onclick_Line(event)">
+					<p>
+						Connect
+					</p>
+			</div>
+		</div>		
+	</div>
+</div>
+	<div class="col-*-2">
+					
+	</div>
+	
+<div class="container">
+	<div class="row">
+	</div>
+</div>
+</body>
+<script src="./public/javascript/jquery-3.2.1.js"></script>
+<script src="./controller/controller.js"></script>
+<script src="./model/GeometricPrimitive.js"></script>
+<script src="./model/Line.js"></script>
+<script src="./model/Point.js"></script>
+<script type="text/javascript">
+var canvas;
+var context;
+	window.onload =function() {
+	canvas = document.getElementById("basicCanvas");
+	context = canvas.getContext('2d');
+	context.fillStyle = '#000000';
+	
+	//init();
+	run();
+	}
+	
+	</script>
+</html>
