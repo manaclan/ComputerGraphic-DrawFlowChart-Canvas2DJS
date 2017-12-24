@@ -18,19 +18,19 @@ function run(){
 
 function draw(canvas, context){
     context.transform.save();
-    context.transform.setTransform(1,0,0,1,0,0);
+    context.transform.identity();
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.transform.restore();
     for(var i=0; i<primitives.length ; i++){
         switch(primitives[i].primitiveType){
             case 1:
             {
-                drawRectangle(primitives[i].xCoordinate, primitives[i].yCoordinate);
+                primitives[i].drawRectangle(context);
                 break;
             }
             case 2:
             {
-                drawRhombus(primitives[i].xCoordinate, primitives[i].yCoordinate);
+                primitives[i].drawRhombus(context);
                 break;
             }
         }
@@ -43,26 +43,7 @@ function draw(canvas, context){
 }
 
 //  Draw a rectangle for statement
-function drawRectangle(xCoordinate, yCoordinate){
-    context.beginPath();
-    context.moveTo(xCoordinate-34, yCoordinate-18);
-    context.lineTo(xCoordinate+34, yCoordinate-18);
-    context.lineTo(xCoordinate+34, yCoordinate+18);
-    context.lineTo(xCoordinate-34, yCoordinate+18);
-    context.closePath();
-    context.stroke();
-}
 
-//  Draw a rhombus for If-else condition
-function drawRhombus(xCoordinate, yCoordinate){
-    context.beginPath();
-    context.moveTo(xCoordinate, yCoordinate-18);
-    context.lineTo(xCoordinate+34, yCoordinate);
-    context.lineTo(xCoordinate, yCoordinate+18);
-    context.lineTo(xCoordinate-34, yCoordinate);
-    context.closePath();
-    context.stroke();
-}
 
 function drawLine(x1, y1, x2, y2){
     context.beginPath();
@@ -80,14 +61,14 @@ function onmousedown_Canvas(event){
     prevMousePositionY = event.offsetY || (evt.pageY - canvas.offsetTop);
     if(!SetChosingPrimitive(prevMousePositionX,prevMousePositionY) && primitiveType ==0)
         dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point
-    dragged = false;
+    
 }
 
 function onmousemove_Canvas(event){
         prevMousePositionX = event.offsetX;
         prevMousePositionY = event.offsetY;
         dragged = true;
-        if(dragStart){
+        if(dragStart && chosingPrimitive==null){
 
             var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point at current position                                                   
             context.transform.translate(point.x-dragStart.x,point.y-dragStart.y);
@@ -97,6 +78,7 @@ function onmousemove_Canvas(event){
 }
 
 function onmouseup_Canvas(event){
+    dragged = false;
     dragStart = null;
     var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
     if(!dragged)
@@ -104,8 +86,15 @@ function onmouseup_Canvas(event){
         {
             case 0:
             {
-                if(!SetChosingPrimitive(prevMousePositionX,prevMousePositionY)){
+                if(!SetChosingPrimitive(point.x,point.y)){
+                    if(chosingPrimitive != null)
+                        chosingPrimitive.chosing = false;
                     chosingPrimitive = null;
+                }
+                else {
+                    chosingPrimitive.chosing = true;
+                    chosingPrimitive.beingSelect(context);
+                    context.transform.restore();
                 }
                 break;
             }
@@ -125,6 +114,9 @@ function onmouseup_Canvas(event){
                     
                 primitiveType = 0;
                 draw(canvas, context);
+                chosingPrimitive = primitives[primitives.length-1];
+                chosingPrimitive.beingSelect(context);
+                context.transform.restore();
                 break;
             }
             case 2:
@@ -161,32 +153,32 @@ function onmouseup_Canvas(event){
                             {
                                 case 0://dx>dy
                                 {
-                                    lines.push(new Line(primitives[i].xCoordinate+34,primitives[i].yCoordinate,
-                                        firstConnectingPrimitive.xCoordinate-34,firstConnectingPrimitive.yCoordinate));
+                                    lines.push(new Line(primitives[i].botright.x,(primitives[i].botright.y+primitives[i].topright.y)/2,
+                                        firstConnectingPrimitive.topleft.x,(firstConnectingPrimitive.topleft.y+firstConnectingPrimitive.botleft.y)/2));
                                     primitiveType = 0;
                                     firstConnectingPrimitive = null;
                                     break;
                                 }
                                 case 1://dx>dy
                                 {
-                                    lines.push(new Line(primitives[i].xCoordinate-34,primitives[i].yCoordinate,
-                                        firstConnectingPrimitive.xCoordinate+34,firstConnectingPrimitive.yCoordinate));
+                                    lines.push(new Line(primitives[i].topleft.x,(primitives[i].topleft.y+primitives[i].botleft.y)/2,
+                                        firstConnectingPrimitive.botright.x,(firstConnectingPrimitive.botright.y+firstConnectingPrimitive.topright.y)/2));
                                     primitiveType = 0;
                                     firstConnectingPrimitive = null;
                                     break;
                                 }
                                 case 2:
                                 {
-                                    lines.push(new Line(primitives[i].xCoordinate,primitives[i].yCoordinate+18,
-                                        firstConnectingPrimitive.xCoordinate,firstConnectingPrimitive.yCoordinate-18));
+                                    lines.push(new Line((primitives[i].botright.x+primitives[i].botleft.x)/2,primitives[i].botright.y,
+                                        (firstConnectingPrimitive.topleft.x+firstConnectingPrimitive.topright.x)/2,firstConnectingPrimitive.topleft.y));
                                     primitiveType = 0;
                                     firstConnectingPrimitive = null;
                                     break;
                                 }
                                 case 3:
                                 {
-                                    lines.push(new Line(primitives[i].xCoordinate,primitives[i].yCoordinate-18,
-                                        firstConnectingPrimitive.xCoordinate,firstConnectingPrimitive.yCoordinate+18));
+                                    lines.push(new Line((primitives[i].topleft.x+primitives[i].topright.x)/2,primitives[i].topleft.y,
+                                        (firstConnectingPrimitive.botright.x+firstConnectingPrimitive.botleft.x)/2,firstConnectingPrimitive.botright.y));
                                     primitiveType = 0;
                                     firstConnectingPrimitive = null;
                                     break;
@@ -205,7 +197,7 @@ function onmouseup_Canvas(event){
 
 
 function isSamePrimitive(primitive1, primitive2){
-    return (primitive1.xCoordinate == primitive2.xCoordinate && primitive1.yCoordinate == primitive2.yCoordinate) ?
+    return (primitive1.topleft.isCoincide(primitive2.topleft) && primitive2.botright.isCoincide(primitive2.botright)) ?
     true : false;
 }
 
@@ -213,8 +205,7 @@ function isSamePrimitive(primitive1, primitive2){
 function SetChosingPrimitive(x, y){
     for(var i = 0;i<primitives.length;i++){
         if(primitives[i].isChosenOROverlapping(x,y)) {
-            chosingPrimitive = new GeometricPrimitive(primitives[i].xCoordinate,
-                                                                    primitives[i].yCoordinate,primitives[i].primitiveType);
+            chosingPrimitive = primitives[i];
             return true;
         }
     }
@@ -370,7 +361,7 @@ function Transform(context) {
     }
     
     this.identity = function() {
-        this.m = [1,0,0,1,0,0];
+        this.matrix = [1,0,0,1,0,0];
         this.setTransform();
     };
 
