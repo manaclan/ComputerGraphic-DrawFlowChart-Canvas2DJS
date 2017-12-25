@@ -5,7 +5,7 @@ class GeometricPrimitive {
         this.botright = new ResizeSquare(xCoordinate + 34,yCoordinate +18);
         this.botleft = new ResizeSquare(xCoordinate - 34,yCoordinate + 18);
         this.primitiveType = primitiveType; //loại hình học
-        this.chosing = true;
+        this.choose = true;
     }
     //  when mouse is clicked, check whether there is a primitive lying under the mouse
     isChosenOROverlapping(xCoordinate, yCoordinate){
@@ -15,7 +15,7 @@ class GeometricPrimitive {
         return false;
     }
     beingSelect(context){
-        if(this.chosing){
+        if(this.choose){
             this.topleft.visible(context);
             this.topright.visible(context);
             this.botright.visible(context);
@@ -59,6 +59,12 @@ class GeometricPrimitive {
         context.lineTo(this.botleft.x, (this.topright.y+this.botright.y)/2);
         context.closePath();
         context.stroke();
+    }
+    stillChoosing(){
+        return this.choose? true:false;
+    }
+    isChoosing(){
+        this.choose = true;
     }
 }
 

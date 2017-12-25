@@ -4,7 +4,8 @@ var primitiveType = 0; //cờ để vẽ hình, 1 là hình chữ nhật, 2 là 
 var primitives = []; // mang de luu cac hinh hoc
 var lines = []; //  array for storing connect lines between primitives
 var firstConnectingPrimitive = null; //    first selected primitive to draw a connect line
-var chosingPrimitive;
+var choosingPrimitive;
+var prevChoosingPrimitive;
 var dragged;
 var dragStart;
 // function init(){
@@ -26,11 +27,13 @@ function draw(canvas, context){
             case 1:
             {
                 primitives[i].drawRectangle(context);
+                primitives[i].beingSelect(context);
                 break;
             }
             case 2:
             {
                 primitives[i].drawRhombus(context);
+                primitives[i].beingSelect(context);
                 break;
             }
         }
@@ -59,16 +62,16 @@ function onmousedown_Canvas(event){
     document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
     prevMousePositionX = event.offsetX || (evt.pageX - canvas.offsetLeft);
     prevMousePositionY = event.offsetY || (evt.pageY - canvas.offsetTop);
-    if(!SetChosingPrimitive(prevMousePositionX,prevMousePositionY) && primitiveType ==0)
+    if(!SetChoosingPrimitive(prevMousePositionX,prevMousePositionY) && primitiveType ==0)
         dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point
-    
+    MouseDown_HandlePrimitiveSelection();
 }
 
 function onmousemove_Canvas(event){
         prevMousePositionX = event.offsetX;
         prevMousePositionY = event.offsetY;
         dragged = true;
-        if(dragStart && chosingPrimitive==null){
+        if(dragStart && choosingPrimitive==null){
 
             var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point at current position                                                   
             context.transform.translate(point.x-dragStart.x,point.y-dragStart.y);
@@ -86,16 +89,7 @@ function onmouseup_Canvas(event){
         {
             case 0:
             {
-                if(!SetChosingPrimitive(point.x,point.y)){
-                    if(chosingPrimitive != null)
-                        chosingPrimitive.chosing = false;
-                    chosingPrimitive = null;
-                }
-                else {
-                    chosingPrimitive.chosing = true;
-                    chosingPrimitive.beingSelect(context);
-                    context.transform.restore();
-                }
+                MouseUp_HandlePrimitiveSelection(point.x,point.y);
                 break;
             }
             case 1:
@@ -111,12 +105,11 @@ function onmouseup_Canvas(event){
                 if(doDraw==1){
                     primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
                 }
-                    
                 primitiveType = 0;
+                if(prevChoosingPrimitive) prevChoosingPrimitive.chosing = false;
+                choosingPrimitive = primitives[primitives.length-1];
                 draw(canvas, context);
-                chosingPrimitive = primitives[primitives.length-1];
-                chosingPrimitive.beingSelect(context);
-                context.transform.restore();
+                prevChoosingPrimitive = choosingPrimitive;
                 break;
             }
             case 2:
@@ -131,13 +124,19 @@ function onmouseup_Canvas(event){
                 if(doDraw==1){
                     primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
                 }
-                    primitiveType = 0;
-                    draw(canvas, context);
+                primitiveType = 0;
+                if(prevChoosingPrimitive) prevChoosingPrimitive.chosing = false;
+                choosingPrimitive = primitives[primitives.length-1];
+                draw(canvas, context);
+                choosingPrimitive.beingSelect(context);
+                context.transform.restore();
+                prevChoosingPrimitive = choosingPrimitive;
                 break;
             }
             case 3: //store coordinate of 2 primitive
             {
-                
+                if(choosingPrimitive.chosing) choosingPrimitive.chosing = false;
+                if(prevChoosingPrimitive. chosing) prevChoosingPrimitive. chosing=false;
                 for(var i=0; i<primitives.length ; i++){
                     if(primitives[i].isChosenOROverlapping(point.x,point.y))
                     {
@@ -202,10 +201,10 @@ function isSamePrimitive(primitive1, primitive2){
 }
 
  
-function SetChosingPrimitive(x, y){
+function SetChoosingPrimitive(x, y){
     for(var i = 0;i<primitives.length;i++){
         if(primitives[i].isChosenOROverlapping(x,y)) {
-            chosingPrimitive = primitives[i];
+            choosingPrimitive = primitives[i];
             return true;
         }
     }
@@ -413,4 +412,9 @@ function Transform(context) {
         this.invert();
         return point;
     };
+     this.transformOriginalToTransform = function(x,y){
+        var point = new Point(x * this.matrix[0] + y * this.matrix[2] + this.matrix[4], 
+         x * this.matrix[1] + y * this.matrix[3] + this.matrix[5]);
+        return point;
+     };
 }
