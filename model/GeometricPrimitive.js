@@ -14,7 +14,7 @@ class GeometricPrimitive {
             return true;
         return false;
     }
-    beingSelect(context){
+    DrawResizeSquare(context){
         if(this.choose){
             this.topleft.visible(context);
             this.topright.visible(context);
@@ -60,11 +60,25 @@ class GeometricPrimitive {
         context.closePath();
         context.stroke();
     }
-    stillChoosing(){
+    isChoosing(){
         return this.choose? true:false;
     }
-    isChoosing(){
+    Choosing(){
         this.choose = true;
+    }
+    StopChoosing(){
+        this.choose = false;
+    }
+    GetChosenSquare(x, y){
+        if(this.topleft.isChosen(x,y))
+            return this.topleft;//top left
+        if(this.topright.isChosen(x,y))
+            return this.topright;//top right
+        if(this.botright.isChosen(x,y))
+            return this.botright;//bot right
+        if(this.botleft.isChosen(x,y))
+            return this.botleft;//bot left
+        return null;
     }
 }
 

@@ -8,6 +8,7 @@ var choosingPrimitive;
 var prevChoosingPrimitive;
 var dragged;
 var dragStart;
+var dragForResize = false;
 // function init(){
 // }
 
@@ -27,13 +28,13 @@ function draw(canvas, context){
             case 1:
             {
                 primitives[i].drawRectangle(context);
-                primitives[i].beingSelect(context);
+                primitives[i].DrawResizeSquare(context);
                 break;
             }
             case 2:
             {
                 primitives[i].drawRhombus(context);
-                primitives[i].beingSelect(context);
+                primitives[i].DrawResizeSquare(context);
                 break;
             }
         }
@@ -64,7 +65,8 @@ function onmousedown_Canvas(event){
     prevMousePositionY = event.offsetY || (evt.pageY - canvas.offsetTop);
     if(!SetChoosingPrimitive(prevMousePositionX,prevMousePositionY) && primitiveType ==0)
         dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point
-    MouseDown_HandlePrimitiveSelection();
+    
+    MouseDown_HandlePrimitiveResize();
 }
 
 function onmousemove_Canvas(event){
@@ -78,6 +80,7 @@ function onmousemove_Canvas(event){
             //dragStart = point;
             draw(canvas,context);//redraw
         }
+        
 }
 
 function onmouseup_Canvas(event){
@@ -106,7 +109,7 @@ function onmouseup_Canvas(event){
                     primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
                 }
                 primitiveType = 0;
-                if(prevChoosingPrimitive) prevChoosingPrimitive.chosing = false;
+                if(prevChoosingPrimitive) prevChoosingPrimitive.StopChoosing();
                 choosingPrimitive = primitives[primitives.length-1];
                 draw(canvas, context);
                 prevChoosingPrimitive = choosingPrimitive;
@@ -114,7 +117,7 @@ function onmouseup_Canvas(event){
             }
             case 2:
             {
-                var doDraw = 1; //  Temp variable to see whether we draw or not because of overlapping
+                var doDraw = 1; //  Temp variable to see whether we draw or not because of ovejrlapping
                 for(var i=0; i<primitives.length ; i++)
                     if(primitives[i].isChosenOROverlapping(prevMousePositionX,prevMousePositionY))
                     {
@@ -125,18 +128,19 @@ function onmouseup_Canvas(event){
                     primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
                 }
                 primitiveType = 0;
-                if(prevChoosingPrimitive) prevChoosingPrimitive.chosing = false;
+                if(prevChoosingPrimitive) prevChoosingPrimitive.StopChoosing();
                 choosingPrimitive = primitives[primitives.length-1];
                 draw(canvas, context);
-                choosingPrimitive.beingSelect(context);
-                context.transform.restore();
+                
                 prevChoosingPrimitive = choosingPrimitive;
                 break;
             }
             case 3: //store coordinate of 2 primitive
             {
-                if(choosingPrimitive.chosing) choosingPrimitive.chosing = false;
-                if(prevChoosingPrimitive. chosing) prevChoosingPrimitive. chosing=false;
+                //in case a connect line is used to connect on just one primitive
+                if(choosingPrimitive&&prevChoosingPrimitive)
+                    MouseUp_Line_SelectSamePrimitiveHandle(prevMousePositionX,prevMousePositionY);
+                if(prevChoosingPrimitive == null) prevChoosingPrimitive = choosingPrimitive;
                 for(var i=0; i<primitives.length ; i++){
                     if(primitives[i].isChosenOROverlapping(point.x,point.y))
                     {
@@ -195,21 +199,7 @@ function onmouseup_Canvas(event){
 
 
 
-function isSamePrimitive(primitive1, primitive2){
-    return (primitive1.topleft.isCoincide(primitive2.topleft) && primitive2.botright.isCoincide(primitive2.botright)) ?
-    true : false;
-}
 
- 
-function SetChoosingPrimitive(x, y){
-    for(var i = 0;i<primitives.length;i++){
-        if(primitives[i].isChosenOROverlapping(x,y)) {
-            choosingPrimitive = primitives[i];
-            return true;
-        }
-    }
-    return false;
-}
 function Zoom(wheelNumber){
     prevMousePositionX = event.offsetX;
     prevMousePositionY = event.offsetY;
@@ -240,6 +230,10 @@ function onclick_If_Else(event){
 //  When click on Connect rectangle
 function onclick_Line(event){
     primitiveType = 3;
+    choosingPrimitive.StopChoosing();
+    choosingPrimitive = null;
+    prevChoosingPrimitive = null;
+    draw(canvas,context);
 }
 
 function Transform(context) {

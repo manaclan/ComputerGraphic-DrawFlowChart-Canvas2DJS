@@ -24,5 +24,6 @@ class ResizeSquare {
         context.fillStyle = "white";
         context.fillRect(point.x-3,point.y-3,6,6);
         context.transform.restore();
+        
     }
 }
