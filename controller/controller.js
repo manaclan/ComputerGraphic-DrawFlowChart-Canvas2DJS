@@ -3,12 +3,11 @@ var scaleFactor = 1.1;// Scacle magnitude use for scale
 var primitiveType = 0; //cờ để vẽ hình, 1 là hình chữ nhật, 2 là thoi, 3 là đoạn thẳng
 var primitives = []; // mang de luu cac hinh hoc
 var lines = []; //  array for storing connect lines between primitives
-var firstConnectingPrimitive = null; //    first selected primitive to draw a connect line
 var choosingPrimitive;
 var prevChoosingPrimitive;
-var dragged;
 var dragStart;
-var dragForResize = false;
+var dragForResize;
+var resizesquareIndex = -1; // 0 = top left, 1 = top right, 2 = bot right, 3= bot left
 // function init(){
 // }
 
@@ -27,13 +26,13 @@ function draw(canvas, context){
         switch(primitives[i].primitiveType){
             case 1:
             {
-                primitives[i].drawRectangle(context);
+                primitives[i].DrawRectangle(context);
                 primitives[i].DrawResizeSquare(context);
                 break;
             }
             case 2:
             {
-                primitives[i].drawRhombus(context);
+                primitives[i].DrawRhombus(context);
                 primitives[i].DrawResizeSquare(context);
                 break;
             }
@@ -41,164 +40,114 @@ function draw(canvas, context){
         context.transform.restore();
     }
     for(var i = 0; i < lines.length; i++){
-        drawLine(lines[i].x1,lines[i].y1,lines[i].x2,lines[i].y2);
+        ConnectTwoPrimitive(primitives[lines[i].index1],primitives[lines[i].index2]);
         context.transform.restore();
     }
-}
-
-//  Draw a rectangle for statement
-
-
-function drawLine(x1, y1, x2, y2){
-    context.beginPath();
-    context.moveTo(x1,y1);
-    context.lineTo(x2,y2);
-    context.stroke();
 }
 
 var prevMousePositionX = 0;
 var prevMousePositionY = 0;
 function onmousedown_Canvas(event){
+    prevChoosingPrimitive = choosingPrimitive;
     //setting user select on FireFox, Chrome, Safari
     document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
-    prevMousePositionX = event.offsetX || (evt.pageX - canvas.offsetLeft);
-    prevMousePositionY = event.offsetY || (evt.pageY - canvas.offsetTop);
-    if(!SetChoosingPrimitive(prevMousePositionX,prevMousePositionY) && primitiveType ==0)
+    prevMousePositionX = event.offsetX || (event.pageX - canvas.offsetLeft);
+    prevMousePositionY = event.offsetY || (event.pageY - canvas.offsetTop);
+    var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
+    if(!SetChoosingPrimitive(point.x,point.y) && primitiveType ==0  )
         dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point
-    
-    MouseDown_HandlePrimitiveResize();
+    else if(choosingPrimitive > -1 && SetChoosingPrimitive(point.x,point.y) && primitiveType ==0 
+            && primitives[choosingPrimitive].GetChosenSquareIndex(prevMousePositionX,prevMousePositionY) > -1 ){
+        dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
+        resizesquareIndex = primitives[choosingPrimitive].GetChosenSquareIndex(prevMousePositionX,prevMousePositionY);
+    }
+    else if(choosingPrimitive > -1 && SetChoosingPrimitive(point.x,point.y) && primitiveType ==0 
+    && primitives[choosingPrimitive].GetChosenSquareIndex(prevMousePositionX,prevMousePositionY) == -1 ){
+        dragStart = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
+        if(prevChoosingPrimitive>-1){
+            primitives[prevChoosingPrimitive].StopChoosing();
+            primitives[choosingPrimitive].Choosing();
+        }
+    }
+
+    draw(canvas,context);
 }
 
 function onmousemove_Canvas(event){
-        prevMousePositionX = event.offsetX;
-        prevMousePositionY = event.offsetY;
-        dragged = true;
-        if(dragStart && choosingPrimitive==null){
-
-            var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);//Create a point at current position                                                   
-            context.transform.translate(point.x-dragStart.x,point.y-dragStart.y);
-            //dragStart = point;
-            draw(canvas,context);//redraw
-        }
-        
+    prevMousePositionX = event.offsetX || (event.pageX - canvas.offsetLeft);
+    prevMousePositionY = event.offsetY || (event.pageY - canvas.offsetTop);
+    var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
+    if(dragStart && choosingPrimitive == -1){                                       
+        context.transform.translate(point.x-dragStart.x,point.y-dragStart.y);
+        draw(canvas,context);//redraw
+    }
+    else if(dragStart && choosingPrimitive > -1 && resizesquareIndex > -1){
+        MouseMove_UpdateResizesquareWhileResizing(point);
+        dragStart = point;
+        draw(canvas,context);
+    }
+    else if(dragStart && choosingPrimitive > -1 && resizesquareIndex == -1){
+        primitives[choosingPrimitive].UpdateCoordinate(point.x-dragStart.x,point.y-dragStart.y);
+        dragStart = point;
+        draw(canvas,context);
+    }
 }
 
 function onmouseup_Canvas(event){
-    dragged = false;
     dragStart = null;
     var point = context.transform.transformPoint(prevMousePositionX,prevMousePositionY);
-    if(!dragged)
-        switch(primitiveType)
+    switch(primitiveType)
+    {
+        case 0:
         {
-            case 0:
-            {
-                MouseUp_HandlePrimitiveSelection(point.x,point.y);
-                break;
+            MouseUp_HandlePrimitiveSelection(point.x,point.y);
+            resizesquareIndex = -1;
+            break;
+        }
+        case 1:
+        {
+            var doDraw = 1; //  Temp variable to see whether we draw or not because of overlapping
+            
+            if(CheckObscure(point.x,point.y)>-1){
+                doDraw =0;
+                break;  
             }
-            case 1:
-            {
-                var doDraw = 1; //  Temp variable to see whether we draw or not because of overlapping
-                
-                for(var i=0; i<primitives.length ; i++)
-                    if(primitives[i].isChosenOROverlapping(prevMousePositionX,prevMousePositionY))
-                    {
-                        doDraw =0;
-                        break;   
-                    }
-                if(doDraw==1){
-                    primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
-                }
-                primitiveType = 0;
-                if(prevChoosingPrimitive) prevChoosingPrimitive.StopChoosing();
-                choosingPrimitive = primitives[primitives.length-1];
-                draw(canvas, context);
-                prevChoosingPrimitive = choosingPrimitive;
-                break;
+            if(doDraw==1){
+                primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
             }
-            case 2:
-            {
-                var doDraw = 1; //  Temp variable to see whether we draw or not because of ovejrlapping
-                for(var i=0; i<primitives.length ; i++)
-                    if(primitives[i].isChosenOROverlapping(prevMousePositionX,prevMousePositionY))
-                    {
-                     doDraw =0;
-                     break;   
-                    }
-                if(doDraw==1){
-                    primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
-                }
-                primitiveType = 0;
-                if(prevChoosingPrimitive) prevChoosingPrimitive.StopChoosing();
-                choosingPrimitive = primitives[primitives.length-1];
-                draw(canvas, context);
-                
-                prevChoosingPrimitive = choosingPrimitive;
-                break;
+            primitiveType = 0;
+            if(prevChoosingPrimitive>-1) primitives[prevChoosingPrimitive].StopChoosing();
+            choosingPrimitive = primitives.length-1;
+            draw(canvas, context);
+            break;
+        }
+        case 2:
+        {
+            var doDraw = 1; //  Temp variable to see whether we draw or not because of ovejrlapping
+            if(CheckObscure(point.x,point.y)> -1){
+                doDraw =0;
+                break;  
             }
-            case 3: //store coordinate of 2 primitive
-            {
-                //in case a connect line is used to connect on just one primitive
-                if(choosingPrimitive&&prevChoosingPrimitive)
-                    MouseUp_Line_SelectSamePrimitiveHandle(prevMousePositionX,prevMousePositionY);
-                if(prevChoosingPrimitive == null) prevChoosingPrimitive = choosingPrimitive;
-                for(var i=0; i<primitives.length ; i++){
-                    if(primitives[i].isChosenOROverlapping(point.x,point.y))
-                    {
-                        // if first primitive wasn't stored then store it
-                        if(firstConnectingPrimitive == null)
-                            {
-                                firstConnectingPrimitive = primitives[i];
-                                break;
-                            }
-                        // if first primitive was stored then store 2 primitive to the line
-                        else if(!isSamePrimitive(firstConnectingPrimitive,primitives[i])){
-                            switch(firstConnectingPrimitive.onWhatSide(primitives[i]))
-                            {
-                                case 0://dx>dy
-                                {
-                                    lines.push(new Line(primitives[i].botright.x,(primitives[i].botright.y+primitives[i].topright.y)/2,
-                                        firstConnectingPrimitive.topleft.x,(firstConnectingPrimitive.topleft.y+firstConnectingPrimitive.botleft.y)/2));
-                                    primitiveType = 0;
-                                    firstConnectingPrimitive = null;
-                                    break;
-                                }
-                                case 1://dx>dy
-                                {
-                                    lines.push(new Line(primitives[i].topleft.x,(primitives[i].topleft.y+primitives[i].botleft.y)/2,
-                                        firstConnectingPrimitive.botright.x,(firstConnectingPrimitive.botright.y+firstConnectingPrimitive.topright.y)/2));
-                                    primitiveType = 0;
-                                    firstConnectingPrimitive = null;
-                                    break;
-                                }
-                                case 2:
-                                {
-                                    lines.push(new Line((primitives[i].botright.x+primitives[i].botleft.x)/2,primitives[i].botright.y,
-                                        (firstConnectingPrimitive.topleft.x+firstConnectingPrimitive.topright.x)/2,firstConnectingPrimitive.topleft.y));
-                                    primitiveType = 0;
-                                    firstConnectingPrimitive = null;
-                                    break;
-                                }
-                                case 3:
-                                {
-                                    lines.push(new Line((primitives[i].topleft.x+primitives[i].topright.x)/2,primitives[i].topleft.y,
-                                        (firstConnectingPrimitive.botright.x+firstConnectingPrimitive.botleft.x)/2,firstConnectingPrimitive.botright.y));
-                                    primitiveType = 0;
-                                    firstConnectingPrimitive = null;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                draw(canvas, context);
-                break;
+            if(doDraw==1){
+                primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
             }
+            primitiveType = 0;
+            if(prevChoosingPrimitive>-1) primitives[prevChoosingPrimitive].StopChoosing();
+            choosingPrimitive = primitives.length-1;
+            draw(canvas, context);
+            break;
+        }
+        case 3: //store coordinate of 2 primitive
+        {
+            //in case a connect line is used to connect on just one primitive
+            if(choosingPrimitive > -1 && prevChoosingPrimitive > -1)
+                MouseUp_Line_SelectSamePrimitiveHandle(prevMousePositionX,prevMousePositionY);
+            MouseUp_Line_AddLine(point.x, point.y);
+            draw(canvas, context);
+            break;
+        }
     }
-    
 }
-
-
-
 
 function Zoom(wheelNumber){
     prevMousePositionX = event.offsetX;
@@ -230,9 +179,11 @@ function onclick_If_Else(event){
 //  When click on Connect rectangle
 function onclick_Line(event){
     primitiveType = 3;
-    choosingPrimitive.StopChoosing();
-    choosingPrimitive = null;
-    prevChoosingPrimitive = null;
+    if(choosingPrimitive > -1){
+        primitives[choosingPrimitive].StopChoosing();
+        choosingPrimitive = -1;
+    }
+    prevChoosingPrimitive = -1;
     draw(canvas,context);
 }
 

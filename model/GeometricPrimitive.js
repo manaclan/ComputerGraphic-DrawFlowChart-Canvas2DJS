@@ -8,9 +8,24 @@ class GeometricPrimitive {
         this.choose = true;
     }
     //  when mouse is clicked, check whether there is a primitive lying under the mouse
-    isChosenOROverlapping(xCoordinate, yCoordinate){
+    isChosen(xCoordinate, yCoordinate){
         if(this.topleft.x <= xCoordinate && this.topleft.y <= yCoordinate &&
             this.botright.x >= xCoordinate && this.botright.y >= yCoordinate)
+            return true;
+        return false;
+    }
+    isOverlappedWith(primitive){
+        if(primitive.topleft.x <= this.topleft.x && primitive.topleft.y <= this.topleft.y &&
+            primitive.botright.x >= this.topleft.x && primitive.botright.y >= this.topleft.y)
+            return true;
+        if(primitive.topleft.x <= this.topright.x && primitive.topleft.y <= this.topright.y &&
+            primitive.botright.x >= this.topright.x && primitive.botright.y >= this.topright.y)
+            return true;
+        if(primitive.topleft.x <= this.botright.x && primitive.topleft.y <= this.botright.y &&
+            primitive.botright.x >= this.botright.x && primitive.botright.y >= this.botright.y)
+            return true;
+        if(primitive.topleft.x <= this.botleft.x && primitive.topleft.y <= this.botleft.y &&
+            primitive.botright.x >= this.botleft.x && primitive.botright.y >= this.botleft.y)
             return true;
         return false;
     }
@@ -23,8 +38,7 @@ class GeometricPrimitive {
         }
     }
     onWhatSide(primitive){
-        //dx > dy
-        var dx = Math.abs(this.topleft.x +34 - primitive.topleft.x);
+        var dx = Math.abs(this.topleft.x - primitive.topleft.x);
         var dy = Math.abs(this.topleft.y - primitive.topleft.y);
         if(dx>dy){
             if(this.topright.x<primitive.topleft.x)
@@ -40,7 +54,7 @@ class GeometricPrimitive {
         }
         return -1;
     }
-    drawRectangle(context){
+    DrawRectangle(context){
         context.beginPath();
         context.moveTo(this.topleft.x, this.topleft.y);
         context.lineTo(this.topright.x, this.topright.y);
@@ -51,7 +65,7 @@ class GeometricPrimitive {
     }
     
     //  Draw a rhombus for If-else condition
-    drawRhombus(context){
+    DrawRhombus(context){
         context.beginPath();
         context.moveTo((this.topleft.x+this.topright.x)/2, this.topleft.y);
         context.lineTo(this.topright.x, (this.topright.y+this.botright.y)/2);
@@ -69,16 +83,33 @@ class GeometricPrimitive {
     StopChoosing(){
         this.choose = false;
     }
-    GetChosenSquare(x, y){
+    GetChosenSquareIndex(x, y){
         if(this.topleft.isChosen(x,y))
-            return this.topleft;//top left
+            return 0;//top left
         if(this.topright.isChosen(x,y))
-            return this.topright;//top right
+            return 1;//top right
         if(this.botright.isChosen(x,y))
-            return this.botright;//bot right
+            return 2;//bot right
         if(this.botleft.isChosen(x,y))
-            return this.botleft;//bot left
+            return 3;//bot left
+        return -1;
+    }
+    GetChosenSquare(index){
+        if(index == 0)
+            return this.topleft;
+        if(index == 1)
+            return this.topright;
+        if(index == 2)
+            return this.botright;
+        if(index == 3)
+            return this.botleft;
         return null;
+    }
+    UpdateCoordinate(xIncrement, yIncrement){
+        this.topleft.UpdateCoordinate(xIncrement,yIncrement);
+        this.topright.UpdateCoordinate(xIncrement,yIncrement);
+        this.botright.UpdateCoordinate(xIncrement,yIncrement);
+        this.botleft.UpdateCoordinate(xIncrement,yIncrement);
     }
 }
 

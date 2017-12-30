@@ -24,6 +24,13 @@ class ResizeSquare {
         context.fillStyle = "white";
         context.fillRect(point.x-3,point.y-3,6,6);
         context.transform.restore();
-        
+    }
+    UpdateCoordinate(xIncrement, yIncrement){
+        this.x += xIncrement;
+        this.y += yIncrement;
+    }
+    SwapWith(square){
+        this.x = square.x;
+        this.y = square.y;
     }
 }
