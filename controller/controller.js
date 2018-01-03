@@ -8,6 +8,7 @@ var prevChoosingPrimitive;
 var dragStart;
 var dragForResize;
 var resizesquareIndex = -1; // 0 = top left, 1 = top right, 2 = bot right, 3= bot left
+var primitiveText;
 // function init(){
 // }
 
@@ -22,18 +23,29 @@ function draw(canvas, context){
     context.transform.identity();
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.transform.restore();
+    context.font="20px Arial";
     for(var i=0; i<primitives.length ; i++){
         switch(primitives[i].primitiveType){
             case 1:
             {
                 primitives[i].DrawRectangle(context);
                 primitives[i].DrawResizeSquare(context);
+                primitives[i].DisplayText(context);
                 break;
             }
             case 2:
             {
                 primitives[i].DrawRhombus(context);
                 primitives[i].DrawResizeSquare(context);
+                primitives[i].DisplayText(context);
+                break;
+            }
+            case 4:
+            {
+                primitives[i].DrawTextBox(context);
+                context.strokeStyle="#000000";
+                primitives[i].DrawResizeSquare(context);
+                primitives[i].DisplayText(context);
                 break;
             }
         }
@@ -146,6 +158,22 @@ function onmouseup_Canvas(event){
             draw(canvas, context);
             break;
         }
+        case 4:
+        {
+            var doDraw = 1; //  Temp variable to see whether we draw or not because of ovejrlapping
+            if(CheckObscure(point.x,point.y)> -1){
+                doDraw =0;
+                break;  
+            }
+            if(doDraw==1){
+                primitives.push(new GeometricPrimitive(point.x,point.y,primitiveType));
+            }
+            primitiveType = 0;
+            if(prevChoosingPrimitive>-1) primitives[prevChoosingPrimitive].StopChoosing();
+            choosingPrimitive = primitives.length-1;
+            draw(canvas, context);
+            break;
+        }
     }
 }
 
@@ -185,6 +213,35 @@ function onclick_Line(event){
     }
     prevChoosingPrimitive = -1;
     draw(canvas,context);
+}
+
+function onclick_AddTextButton(event){
+    if(choosingPrimitive > -1){
+        primitiveText = document.getElementById("text").value;
+        primitives[choosingPrimitive].AddText(primitiveText);
+        primitiveText = "";
+        draw(canvas,context);
+    }
+    
+}
+
+function onclick_DeleteButton(event){
+    if(choosingPrimitive > -1){
+        for(var i =0 ; i < lines.length; i++){
+            if(lines[i].index1 == choosingPrimitive || lines[i].index2 == choosingPrimitive){
+                lines.splice(i,1);
+                i--;
+            }
+        }
+        primitives.splice(choosingPrimitive,1);
+        choosingPrimitive = -1;
+        prevChoosingPrimitive = -1;
+        draw(canvas,context);
+    }
+}
+
+function onclick_TextBox(event){
+    primitiveType = 4;
 }
 
 function Transform(context) {

@@ -84,6 +84,11 @@ function MouseUp_Line_SelectSamePrimitiveHandle(primitiveX,primitiveY){
 function MouseUp_Line_AddLine(x, y){
     if(prevChoosingPrimitive == -1) 
         prevChoosingPrimitive = choosingPrimitive;
+    if(prevChoosingPrimitive == 4 || choosingPrimitive == 4){
+        prevChoosingPrimitive = 0;
+        choosingPrimitive = 0;
+        return;
+    }
     // if first primitive was stored then store 2 primitive to the line
     else if(!isSamePrimitive(primitives[prevChoosingPrimitive],primitives[choosingPrimitive])){
         lines.push(new Line(prevChoosingPrimitive,choosingPrimitive));

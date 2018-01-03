@@ -6,6 +6,7 @@ class GeometricPrimitive {
         this.botleft = new ResizeSquare(xCoordinate - 34,yCoordinate + 18);
         this.primitiveType = primitiveType; //loại hình học
         this.choose = true;
+        this.text = "";
     }
     //  when mouse is clicked, check whether there is a primitive lying under the mouse
     isChosen(xCoordinate, yCoordinate){
@@ -63,6 +64,16 @@ class GeometricPrimitive {
         context.closePath();
         context.stroke();
     }
+    DrawTextBox(context){
+        context.beginPath();
+        context.moveTo(this.topleft.x, this.topleft.y);
+        context.lineTo(this.topright.x, this.topright.y);
+        context.lineTo(this.botright.x, this.botright.y);
+        context.lineTo(this.botleft.x, this.botleft.y);
+        context.closePath();
+        context.strokeStyle="#ffffff";
+        context.stroke();
+    }
     
     //  Draw a rhombus for If-else condition
     DrawRhombus(context){
@@ -110,6 +121,29 @@ class GeometricPrimitive {
         this.topright.UpdateCoordinate(xIncrement,yIncrement);
         this.botright.UpdateCoordinate(xIncrement,yIncrement);
         this.botleft.UpdateCoordinate(xIncrement,yIncrement);
+    }
+    AddText(text){
+        this.text = text;
+    }
+    DisplayText(context){
+        switch(this.primitiveType){
+            case 1:
+            {
+                context.fillText(this.text,(this.topleft.x + this.topright.x - this.text.length*10)/2,(this.botleft.y+this.topleft.y)/2 + 5);
+                break;
+            }
+            case 2:
+            {
+                context.fillText(this.text,(this.topleft.x + this.topright.x - this.text.length*10)/2 ,(this.botleft.y+this.topleft.y)/2 + 5);
+                break;
+            }
+            case 4:
+            {
+                context.fillText(this.text,(this.topleft.x + this.topright.x - this.text.length*10)/2,(this.botleft.y+this.topleft.y)/2 + 5);
+                break;
+            }
+        }
+        
     }
 }
 
